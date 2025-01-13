@@ -47,6 +47,5 @@ jobs:
             # Start the application using PM2
             pm2 start npm --name "new-app" -- start
 
-            # Save PM2 process list to restart on reboot
+            # Save PM2 process list to restart on reboot (already done manually on the EC2 instance)
             pm2 save
-            pm2 startup
