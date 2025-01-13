@@ -40,13 +40,12 @@ jobs:
 
             # Build the Next.js application
             sudo npm run build
-            
-            pm2 delete new-app || true
+
             # Kill any process running on port 3000
             sudo fuser -k 3000/tcp || true
 
             # Start the application using PM2
             pm2 start npm --name "new-app" -- start
 
-            # Save PM2 process list to restart on reboot (already done manually on the EC2 instance)
+            # Save PM2 process list to restart on reboot
             pm2 save
