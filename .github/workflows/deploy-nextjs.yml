@@ -22,7 +22,7 @@ jobs:
           SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}  # SSH key for authentication
           REMOTE_HOST: ${{ secrets.HOST_DNS }}         # Public IP or DNS of your EC2
           REMOTE_USER: ${{ secrets.USERNAME }}         # SSH username (e.g., ec2-user, ubuntu)
-          TARGET: ${{ secrets.TARGET_DIR }}            # Deployment directory (e.g., /home/ubuntu/next)
+          TARGET: ${{ secrets.TARGET_DIR }}           # Deployment directory (e.g., /home/ubuntu/next)
 
       # Step 3: Run deployment commands on EC2
       - name: Execute Deployment Commands
@@ -40,15 +40,13 @@ jobs:
 
             # Build the Next.js application
             sudo npm run build
-
+            
+            pm2 delete new-app || true
             # Kill any process running on port 3000
             sudo fuser -k 3000/tcp || true
-
-            # Delete the old 'new-app' process if it exists
-            pm2 delete new-app || true
 
             # Start the application using PM2
             pm2 start npm --name "new-app" -- start
 
-            # Save PM2 process list to restart on reboot
+            # Save PM2 process list to restart on reboot (already done manually on the EC2 instance)
             pm2 save
