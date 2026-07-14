@@ -11,43 +11,34 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout the code
+      # Checkout the repository
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      # Step 2: Copy project files to EC2
-      - name: Deploy Code to EC2
-        uses: easingthemes/ssh-deploy@main
-        env:
-          SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}  # SSH key for authentication
-          REMOTE_HOST: ${{ secrets.HOST_DNS }}         # Public IP or DNS of your EC2
-          REMOTE_USER: ${{ secrets.USERNAME }}         # SSH username (e.g., ec2-user, ubuntu)
-          TARGET: ${{ secrets.TARGET_DIR }}           # Deployment directory (e.g., /home/ubuntu/next)
-
-      # Step 3: Run deployment commands on EC2
-      - name: Execute Deployment Commands
-        uses: appleboy/ssh-action@master
+      # Copy project files to EC2
+      - name: Copy Project to EC2
+        uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.HOST_DNS }}
           username: ${{ secrets.USERNAME }}
-          key: ${{ secrets.EC2_SSH_KEY }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          source: "."
+          target: ${{ secrets.TARGET_DIR }}
+
+      # Execute deployment commands
+      - name: Deploy on EC2
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.HOST_DNS }}
+          username: ${{ secrets.USERNAME }}
+          password: ${{ secrets.SSH_PASSWORD }}
           script: |
-            # Navigate to the deployment directory
             cd ${{ secrets.TARGET_DIR }}
 
-            # Install Node.js dependencies
-            sudo npm install
+            npm install
+            npm run build
 
-            # Build the Next.js application
-            sudo npm run build
+            rm -rf /home/ubuntu/bizpay-docker/frontend/dist
+            cp -r dist /home/ubuntu/bizpay-docker/frontend/
 
-            # Kill any process running on port 3000
-            pm2 delete new-app || true
-            sudo fuser -k 3000/tcp || true
-            
-            # Start the application using PM2
-            pm2 start npm --name "new-app" -- start
-
-            # Save PM2 process list to restart on reboot
-            pm2 save
-          
+            echo "Frontend build copied successfully."
